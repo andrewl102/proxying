@@ -4,11 +4,17 @@ import javax.inject._
 
 import play.api.Play.current
 import play.api.http.HttpEntity
+import play.api.libs.json.Json
 import play.api.libs.ws.WS
 import play.api.mvc._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+case class AgentRequest(command:String, arguments:Map[String,String])
+case class AgentResponse(command:String, arguments:Map[String,String])
+import FakeHomeController._
+
 /**
   * This controller creates an `Action` to handle HTTP requests to the
   * application's home page.
@@ -16,6 +22,7 @@ import scala.concurrent.Future
   */
 @Singleton
 class HomeController @Inject() extends Controller {
+
   /**
     * Create an Action to render an HTML page with a welcome message.
     * The configuration in the `routes` file means that this method
@@ -26,8 +33,20 @@ class HomeController @Inject() extends Controller {
     Ok(views.html.index("Your new application is ready."))
   }
 
-  def ajaxCall = Action {
-    Ok("Some information in here")
+  implicit val reqFormat = Json.format[AgentRequest]
+  implicit val responseFormat = Json.format[AgentResponse]
+
+  def handler = Action(parse.json) { implicit request =>
+    val asRequest: AgentRequest = request.body.validate[AgentRequest].get
+    println(asRequest)
+    asRequest.command match {
+      case "reset" => readingDone = false; paymentDone = false; completeDone = false;
+      case "fakeSwipe" => readingDone = true; completeDone = false;
+      case "fakePay" => paymentDone = true; readingDone = false;
+      case "fakeComplete" => completeDone = true; paymentDone = false
+    }
+    println(s" reading $readingDone payment $paymentDone complete $completeDone")
+    Ok(Json.toJson(AgentResponse(asRequest.command, asRequest.arguments)))
   }
 
   def proxy(path: String) = Action.async { request =>
@@ -62,4 +81,17 @@ class HomeController @Inject() extends Controller {
       Future.successful(Ok("<html><head>Some example</head><body></body>"))
     }
   }
+
+  def swiped() = Action { Ok(Json.toJson(readingDone)) }
+
+  def paymentProcessed() = Action{Ok(Json.toJson(paymentDone))}
+
+  def transactionCompleted() = Action { Ok(Json.toJson(completeDone)) }
+
+}
+
+object FakeHomeController {
+  var readingDone = false
+  var paymentDone = false
+  var completeDone = false
 }
