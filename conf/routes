@@ -3,12 +3,15 @@
 # ~~~~
 
 POST    /pushUpdate                 controllers.AgentController.handler
+POST    /reset                          controllers.AgentController.handler
+POST    /prepare                 controllers.AgentController.prepareTransaction
+POST    /complete                 controllers.AgentController.completeTransaction
 
-GET     /cardSwiped                 controllers.AgentController.swiped
-GET     /paymentProcessed           controllers.AgentController.paymentProcessed
-GET     /transactionCompleted       controllers.AgentController.transactionCompleted
+#GET     /cardSwiped                 controllers.AgentController.swiped
+#GET     /paymentProcessed           controllers.AgentController.paymentProcessed
+#GET     /transactionCompleted       controllers.AgentController.transactionCompleted
 
-GET     /favicon.ico                controllers.AgentController.noContent
+#GET     /favicon.ico                controllers.AgentController.noContent
 
 #Catch all for proxying. Above routes are evaluated first, these need to be the last definition(s)
 GET     /*path                      controllers.AgentController.proxy(path)
