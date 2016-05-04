@@ -182,13 +182,13 @@ object ActionParser {
 //        case "TXN" ::  "POKE" :: sale :: Nil => CompAction(cmdSeq,amount)
         case _ => {
           new Throwable().printStackTrace();
-          throw new IllegalArgumentException(s"Couldn't parse action of ${asString}")
+          throw new IllegalArgumentException(s"Couldn't parse action of $asString")
 
         }
       }
     } else {
       new Throwable().printStackTrace();
-      throw new IllegalArgumentException(s"Not terminated by CR : ${asString}")
+      throw new IllegalArgumentException(s"Not terminated by CR : $asString")
     }
   }
 }
@@ -196,12 +196,10 @@ object ActionParser {
 
 sealed trait ScrCom extends Product {
   def prefix:List[String]
-  def asList: List[String] = prefix ++ this.productIterator.map(x => {
-    x match {
-      case o:Option[String] => o.getOrElse("")
-      case x:Any => x.toString
-    }}
-  ).toList
+  def asList: List[String] = prefix ++ this.productIterator.map {
+    case o: Option[String] => o.getOrElse("")
+    case x: Any => x.toString
+  }.toList
 
   def asByteString: ByteString = ByteString(asList.mkString("~").toCharArray.map(_.toByte) ++ Array('\r'.toByte))
 }

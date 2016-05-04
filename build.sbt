@@ -14,4 +14,5 @@ libraryDependencies ++= Seq(
   "org.scream3r" % "jssc" % "2.8.0"
 )
 libraryDependencies += filters
+libraryDependencies += "commons-io" % "commons-io" % "2.5"
 resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
