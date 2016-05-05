@@ -57,13 +57,13 @@ public class Serial {
                 InputStream in = serialPort.getInputStream();
                 System.out.println("Trying to read in stream");
                 String s = readStream(in);
-                System.out.println("Command ->" + s);
-
+                System.out.println("Command response ->" + s);
                 Thread.sleep(200);
                 System.out.println("Writing auth");
                 byte[] bytes2 = "TXN~AUTH~1234567890123456~100~MERCHANT REFERENCE 12345678~~~\r".getBytes();
                 out.write(bytes2);
                 out.flush();
+                Thread.sleep(200);
                 System.out.println("Trying to read second input stream");
                 s = readStream(in);
                 System.out.println("Command ->" + s);
@@ -87,7 +87,7 @@ public class Serial {
                 tmp = "(" + b + "/" + (Integer.valueOf(String.valueOf(b), 16)) + (")");
             }
             if(b == -1) {
-                System.out.print("Read -1, sleeping");
+                System.out.println("Read -1, sleeping");
                 Thread.sleep(3000);
             } else {
                 System.out.println(":Read " + tmp + ", blocking");
