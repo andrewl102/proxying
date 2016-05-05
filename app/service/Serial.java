@@ -1,23 +1,17 @@
 package service;
 
 import gnu.io.*;
-import jssc.SerialPortException;
-import jssc.SerialPortList;
-import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Enumeration;
 
 /**
  * Created by alynch on 4/26/2016 AD.
  */
 public class Serial {
 
-    public static void main(String[] args) throws IOException, UnsupportedCommOperationException, NoSuchPortException, PortInUseException {
+    public static void main(String[] args) throws IOException, UnsupportedCommOperationException, NoSuchPortException, PortInUseException, InterruptedException {
 //        System.out.println(Arrays.toString(listSerialPorts()));
 
 //        String[] portNames = SerialPortList.getPortNames();
@@ -35,47 +29,74 @@ public class Serial {
         }*/
 
         CommPortIdentifier portIdentifier = CommPortIdentifier.getPortIdentifier("COM4");
-        if ( portIdentifier.isCurrentlyOwned() )
-        {
+        if (portIdentifier.isCurrentlyOwned()) {
             System.out.println("Error: Port is currently in use");
-        }
-        else
-        {
+        } else {
             System.out.println("Connect 1/2");
-            CommPort commPort = portIdentifier.open("aaaa",6000);
+            CommPort commPort = portIdentifier.open("aaaa", 6000);
 
-            if ( commPort instanceof SerialPort )
-            {
+            if (commPort instanceof SerialPort) {
                 System.out.println("Connect 2/2");
                 SerialPort serialPort = (SerialPort) commPort;
+                serialPort.setSerialPortParams(115200, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
+                serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
                 System.out.println("BaudRate: " + serialPort.getBaudRate());
-                System.out.println("DataBIts: " + serialPort.getDataBits());
+                System.out.println("DataBits: " + serialPort.getDataBits());
                 System.out.println("StopBits: " + serialPort.getStopBits());
                 System.out.println("Parity: " + serialPort.getParity());
                 System.out.println("FlowControl: " + serialPort.getFlowControlMode());
-//                serialPort.setSerialPortParams(4800,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_ODD);
-//                serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_RTSCTS_IN);
-                System.out.println("BaudRate: " + serialPort.getBaudRate());
-                System.out.println("DataBIts: " + serialPort.getDataBits());
-                System.out.println("StopBits: " + serialPort.getStopBits());
-                System.out.println("Parity: " + serialPort.getParity());
-                System.out.println("FlowControl: " + serialPort.getFlowControlMode());
-                InputStream in = serialPort.getInputStream();
+                serialPort.setEndOfInputChar((byte) 13);
+                System.out.println("END of thing: " + serialPort.getEndOfInputChar());
                 OutputStream out = serialPort.getOutputStream();
 
-                byte[] bytes = "TXN~AUTH~1234567890123456~100~MERCHANT REFERENCE 12345678~~~\r".getBytes();
+                byte[] bytes = "CFG~SETD~123~Device1234~AUD~0007~ABCCORP_PARKING_002~\r".getBytes();
                 out.write(bytes);
                 out.flush();
-//                org.apache.commons.io.IOUtils.readFully(in,);
-                String theString = IOUtils.toString(in, "UTF-8");
-                System.out.println(theString);
-            }
-            else
-            {
+
+                Thread.sleep(200);
+                InputStream in = serialPort.getInputStream();
+                System.out.println("Trying to read in stream");
+                String s = readStream(in);
+                System.out.println("Command ->" + s);
+
+                Thread.sleep(200);
+                System.out.println("Writing auth");
+                byte[] bytes2 = "TXN~AUTH~1234567890123456~100~MERCHANT REFERENCE 12345678~~~\r".getBytes();
+                out.write(bytes2);
+                out.flush();
+                System.out.println("Trying to read second input stream");
+                s = readStream(in);
+                System.out.println("Command ->" + s);
+            } else {
                 System.out.println("Error: Only serial ports are handled by this example.");
             }
         }
     }
+
+    private static String readStream(InputStream in) throws IOException, InterruptedException {
+        StringBuilder s = new StringBuilder();
+        for (int i = 0; i < 10000; i++) {
+            int b = in.read();
+            if (b == 13) {
+                return s.toString();
+            }
+            String tmp;
+            if (b >= 48 && b <= 127) { //ASCII readable
+                tmp = "" + (char) b;
+            } else {
+                tmp = "(" + b + "/" + (Integer.valueOf(String.valueOf(b), 16)) + (")");
+            }
+            if(b == -1) {
+                System.out.print("Read -1, sleeping");
+                Thread.sleep(3000);
+            } else {
+                System.out.println(":Read " + tmp + ", blocking");
+                s.append(tmp);
+            }
+        }
+        return null;
+    }
+
 /*
     private static String[] listSerialPorts() {
 
@@ -101,3 +122,4 @@ public class Serial {
         return portArray;
     }*/
 }
+
