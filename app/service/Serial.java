@@ -32,11 +32,9 @@ public class Serial {
         if (portIdentifier.isCurrentlyOwned()) {
             System.out.println("Error: Port is currently in use");
         } else {
-            System.out.println("Connect 1/2");
-            CommPort commPort = portIdentifier.open("aaaa", 6000);
+            CommPort commPort = portIdentifier.open("MyJavaApp", 6000);
 
             if (commPort instanceof SerialPort) {
-                System.out.println("Connect 2/2");
                 SerialPort serialPort = (SerialPort) commPort;
                 serialPort.setSerialPortParams(115200, SerialPort.DATABITS_8, SerialPort.STOPBITS_1, SerialPort.PARITY_NONE);
                 serialPort.setFlowControlMode(SerialPort.FLOWCONTROL_NONE);
@@ -49,7 +47,7 @@ public class Serial {
                 System.out.println("END of thing: " + serialPort.getEndOfInputChar());
                 OutputStream out = serialPort.getOutputStream();
 
-                byte[] bytes = "CFG~SETD~123~Device1234~AUD~0007~ABCCORP_PARKING_002~\r".getBytes();
+                byte[] bytes = "CFG~SETD~123~123~AUD~0007~test~3~0~\r".getBytes();
                 out.write(bytes);
                 out.flush();
 
@@ -60,13 +58,15 @@ public class Serial {
                 System.out.println("Command response ->" + s);
                 Thread.sleep(200);
                 System.out.println("Writing auth");
-                byte[] bytes2 = "TXN~AUTH~1234567890123456~100~MERCHANT REFERENCE 12345678~~~\r".getBytes();
+                byte[] bytes2 = "TXN~AUTH~1234512~213~someref~~~~\r".getBytes();
                 out.write(bytes2);
                 out.flush();
+                //out.write(bytes2);
+               // out.flush();
                 Thread.sleep(200);
                 System.out.println("Trying to read second input stream");
                 s = readStream(in);
-                System.out.println("Command ->" + s);
+                System.out.println("Command response ->" + s);
             } else {
                 System.out.println("Error: Only serial ports are handled by this example.");
             }
@@ -90,7 +90,7 @@ public class Serial {
                 System.out.println("Read -1, sleeping");
                 Thread.sleep(3000);
             } else {
-                System.out.println(":Read " + tmp + ", blocking");
+                //System.out.println(":Read " + tmp + ", blocking");
                 s.append(tmp);
             }
         }
