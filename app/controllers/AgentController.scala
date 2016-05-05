@@ -2,6 +2,7 @@ package controllers
 
 import javax.inject._
 
+import akka.util.ByteString
 import play.api.http.HttpEntity
 import play.api.libs.json.Json
 import play.api.libs.ws.{InMemoryBody, WSClient, WSRequest}
@@ -9,7 +10,10 @@ import play.api.mvc._
 import play.api.{Environment, Logger}
 
 import scala.annotation.tailrec
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.Duration
+import scala.io.Source
 
 case class AgentRequest(command: String, arguments: Map[String, String])
 
@@ -24,6 +28,19 @@ class AgentController @Inject()(implicit ws: WSClient, app: Environment, configu
   implicit val prepF = Json.format[PrepareSale]
   implicit val compF = Json.format[ConfirmSale]
   implicit val responseFormat = Json.format[AgentResponse]
+
+  def fudgeStuff() = Action {
+    val asStream = getClass.getResourceAsStream("/examplepost.xml")
+    val demBytes = Source.fromInputStream(asStream).map(_.toByte).toArray
+    val theThing = ws.url("https://qa.paymentexpress.com/scr.aspx").withHeaders(
+      "User-Agent"->"SKScrApp",
+      "Content-Type"->"text/plain",
+      "Content-Length"-> demBytes.length.toString).
+    withBody(InMemoryBody(ByteString(demBytes)))
+    val resp = Await.result(theThing.execute(),Duration("10s"))
+    println(resp.body)
+    Ok(resp.body)
+  }
 
   def handler = Action(parse.json) { implicit request =>
     val asRequest: AgentRequest = request.body.validate[AgentRequest].get
